@@ -5,222 +5,264 @@ using Jypeli.Assets;
 using Jypeli.Controls;
 using Jypeli.Widgets;
 
-namespace BlackjackGame;
-
-// Luokan ja ohjelman tekijätiedot ja versio
-/// @author Tomas Vallas
-/// @version 07.10.2024
-/// <summary>
-/// Blackjack peli
-/// </summary>
-
-public class BlackjackGame : PhysicsGame // Perii Jypelin PhysicsGame-luokan, joka mahdollistaa pelifysiikat ja tapahtumankäsittelyn
+namespace BlackjackGame
 {
-    private Deck deck;                    // Korttipakka
-    private List<Card> playerHand;        // Pelaajan kortit
-    private List<Card> dealerHand;        // Jakajan kortit
-    private int playerScore;              // Pelaajan pisteet
-    private int dealerScore;              // Jakajan pisteet
-    private int playerMoney = 1000;       // Pelaajan aloitusrahat
-    private int bet = 100;                // Veto per kierros
-
-    private Label playerLabel;            // Pelaajan pistetiedon näyttävä label
-    private Label dealerLabel;            // Jakajan pistetiedon näyttävä label
-    private Label moneyLabel;             // Pelaajan rahasumman näyttävä label
-    private Label messageLabel;           // Pelin viesteille tarkoitettu label
-
-    public override void Begin()          // Pelin aloitusmetodi
+    /// <summary>
+    /// Blackjack-peli, jossa pelaaja ja jakaja pelaavat toisiaan vastaan.
+    /// Pelaaja voi ottaa kortteja (Hit), pysyä (Stand) ja asettaa panoksia.
+    /// </summary>
+    public class BlackjackGame : PhysicsGame
     {
-        PhoneBackButton.Listen(ConfirmExit, "Lopeta peli");   // Mahdollistaa pelin sulkemisen puhelimen back-painikkeella
-        Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli"); // Escape-näppäin lopettaa pelin
-        ClearAll();                                          // Tyhjentää ruudun sisällön
-        SetWindowSize(800, 600);                             // Määrittää peliruudun koon
-        InitializeGame();                                    // Kutsuu pelin alustukseen tarkoitettua metodia
-    }
+        private Deck deck;  // Korttipakka
+        private List<Card> playerHand;  // Pelaajan kortit
+        private List<Card> dealerHand;  // Jakajan kortit
+        private int playerScore;  // Pelaajan pisteet
+        private int dealerScore;  // Jakajan pisteet
+        private int playerMoney = 1000;  // Pelaajan aloitusrahat
+        private int bet = 100;  // Kierroksen panos
 
-    private void InitializeGame()         // Pelin alustustoiminnot
-    {
-        deck = new Deck();                // Luodaan uusi korttipakka
-        playerHand = new List<Card>();    // Luodaan lista pelaajan kortteja varten
-        dealerHand = new List<Card>();    // Luodaan lista jakajan kortteja varten
-        playerScore = 0;                  // Asetetaan pelaajan pisteet nollaan
-        dealerScore = 0;                  // Asetetaan jakajan pisteet nollaan
+        private Label playerLabel;  // Pelaajan pistetiedon näyttävä tekstikenttä
+        private Label dealerLabel;  // Jakajan pistetiedon näyttävä tekstikenttä
+        private Label moneyLabel;  // Pelaajan rahasumman näyttävä tekstikenttä
+        private Label messageLabel;  // Pelin viesteille tarkoitettu tekstikenttä
 
-        // Alustetaan tekstilaatikot näytölle ja sijoitetaan ne pelialueelle
-        playerLabel = new Label("Player: 0");
-        playerLabel.Position = new Vector(-200, 200);
-        Add(playerLabel);
-
-        dealerLabel = new Label("Dealer: 0");
-        dealerLabel.Position = new Vector(-200, 150);
-        Add(dealerLabel);
-
-        moneyLabel = new Label("Money: " + playerMoney);
-        moneyLabel.Position = new Vector(-200, 100);
-        Add(moneyLabel);
-
-        messageLabel = new Label("Place your bet and press Enter.");
-        messageLabel.Position = new Vector(0, 0);
-        Add(messageLabel);
-
-        // Määritetään näppäinkomennot
-        Keyboard.Listen(Key.Enter, ButtonState.Pressed, NewRound, "Start a new round"); // Enter aloittaa uuden kierroksen
-        Keyboard.Listen(Key.Space, ButtonState.Pressed, PlayerHit, "Take a card");      // Space antaa pelaajalle uuden kortin
-        Keyboard.Listen(Key.S, ButtonState.Pressed, PlayerStand, "Stand");              // S-painike saa pelaajan pysymään
-        Keyboard.Listen(Key.Escape, ButtonState.Pressed, Exit, "Exit the game");        // Escape lopettaa pelin
-
-        NewRound(); // Aloittaa ensimmäisen kierroksen
-    }
-
-    private void NewRound()               // Aloittaa uuden kierroksen
-    {
-        deck.Shuffle();                   // Sekoittaa pakan
-        playerHand.Clear();               // Tyhjentää pelaajan käden
-        dealerHand.Clear();               // Tyhjentää jakajan käden
-
-        // Jakaa kaksi korttia pelaajalle ja jakajalle
-        playerHand.Add(deck.DrawCard());
-        playerHand.Add(deck.DrawCard());
-
-        dealerHand.Add(deck.DrawCard());
-        dealerHand.Add(deck.DrawCard());
-
-        UpdateScore();                    // Päivittää pisteet
-        UpdateUI();                       // Päivittää näytön
-        messageLabel.Text = "Press Space to Hit, or S to Stand."; // Näyttää ohjeviestin
-    }
-
-    private void PlayerHit()              // Pelaajan toiminta "Hit"-valinnassa
-    {
-        playerHand.Add(deck.DrawCard());  // Jakaa pelaajalle uuden kortin
-        UpdateScore();                    // Päivittää pelaajan pisteet
-
-        if (playerScore > 21)             // Tarkistaa, meneekö pelaajan pisteet yli 21
+        /// <summary>
+        /// Aloittaa pelin ja määrittää näppäinkomennot sekä käynnistää pelin alustusmetodin.
+        /// </summary>
+        public override void Begin()
         {
-            messageLabel.Text = "Player busts! You lose.";
-            playerMoney -= bet;           // Vähentää pelaajan rahasta panoksen verran
-            UpdateUI();
-            Timer.SingleShot(2.0, NewRound); // Aloittaa uuden kierroksen 2 sekunnin kuluttua
+            PhoneBackButton.Listen(ConfirmExit, "Lopeta peli");
+            Keyboard.Listen(Key.Escape, ButtonState.Pressed, ConfirmExit, "Lopeta peli");
+            ClearAll();
+            SetWindowSize(800, 600);
+            InitializeGame();
         }
-        else
-        {
-            UpdateUI();                   // Päivittää näytön, jos pelaaja ei bustaa
-        }
-    }
 
-    private void PlayerStand()            // Pelaajan toiminta "Stand"-valinnassa
-    {
-        while (dealerScore < 17)          // Jakaja ottaa kortteja, kunnes pisteet ovat vähintään 17
+        /// <summary>
+        /// Alustaa pelin, luo korttipakan ja asettaa tekstikentät paikalleen.
+        /// </summary>
+        private void InitializeGame()
         {
+            deck = new Deck();
+            playerHand = new List<Card>();
+            dealerHand = new List<Card>();
+            playerScore = 0;
+            dealerScore = 0;
+
+            playerLabel = new Label("Player: 0");
+            playerLabel.Position = new Vector(-200, 200);
+            Add(playerLabel);
+
+            dealerLabel = new Label("Dealer: 0");
+            dealerLabel.Position = new Vector(-200, 150);
+            Add(dealerLabel);
+
+            moneyLabel = new Label("Money: " + playerMoney);
+            moneyLabel.Position = new Vector(-200, 100);
+            Add(moneyLabel);
+
+            messageLabel = new Label("Place your bet and press Enter.");
+            messageLabel.Position = new Vector(0, 0);
+            Add(messageLabel);
+
+            Keyboard.Listen(Key.Enter, ButtonState.Pressed, NewRound, "Aloita uusi kierros");
+            Keyboard.Listen(Key.Space, ButtonState.Pressed, PlayerHit, "Ota kortti");
+            Keyboard.Listen(Key.S, ButtonState.Pressed, PlayerStand, "Pysy");
+            Keyboard.Listen(Key.Escape, ButtonState.Pressed, Exit, "Poistu pelistä");
+
+            NewRound();
+        }
+
+        /// <summary>
+        /// Aloittaa uuden kierroksen ja jakaa kortit pelaajalle ja jakajalle.
+        /// </summary>
+        private void NewRound()
+        {
+            deck.Shuffle();
+            playerHand.Clear();
+            dealerHand.Clear();
+
+            playerHand.Add(deck.DrawCard());
+            playerHand.Add(deck.DrawCard());
+
             dealerHand.Add(deck.DrawCard());
+            dealerHand.Add(deck.DrawCard());
+
             UpdateScore();
+            UpdateUI();
+            messageLabel.Text = "Press Space to Hit, or S to Stand.";
         }
 
-        // Tarkistaa voittotilanteen: pelaaja voittaa, jos jakaja menee yli 21:n tai pelaajan pisteet ovat korkeammat
-        if (dealerScore > 21 || playerScore > dealerScore)
+        /// <summary>
+        /// Pelaajan "Hit"-toiminto, jossa pelaaja ottaa uuden kortin.
+        /// </summary>
+        private void PlayerHit()
         {
-            messageLabel.Text = "You win!";
-            playerMoney += bet;           // Lisää panoksen verran pelaajan rahaan
-        }
-        else if (dealerScore > playerScore)
-        {
-            messageLabel.Text = "Dealer wins!";
-            playerMoney -= bet;           // Vähentää panoksen verran pelaajan rahasta
-        }
-        else
-        {
-            messageLabel.Text = "It's a draw."; // Jos tasapeli, ei rahamuutosta
-        }
+            playerHand.Add(deck.DrawCard());
+            UpdateScore();
 
-        UpdateUI();
-        Timer.SingleShot(2.0, NewRound);  // Aloittaa uuden kierroksen 2 sekunnin kuluttua
-    }
-
-    private void UpdateScore()            // Päivittää pelaajan ja jakajan pisteet
-    {
-        playerScore = CalculateScore(playerHand);
-        dealerScore = CalculateScore(dealerHand);
-    }
-
-    private int CalculateScore(List<Card> hand) // Laskee annetun korttilistan pisteet
-    {
-        int total = 0;
-        int aceCount = 0;
-
-        foreach (Card card in hand)       // Käy kortit läpi ja lisää niiden arvot pisteisiin
-        {
-            if (card.Value >= 10)         // Kortit arvoltaan 10 tai yli lasketaan kympin arvoisiksi
-                total += 10;
-            else if (card.Value == 1)     // Ässä voi olla 1 tai 11
+            if (playerScore > 21)
             {
-                aceCount++;
-                total += 11;
+                messageLabel.Text = "Player busts! You lose.";
+                playerMoney -= bet;
+                UpdateUI();
+                Timer.SingleShot(2.0, NewRound);
             }
             else
-                total += card.Value;
-        }
-
-        while (total > 21 && aceCount > 0) // Jos pisteet ylittävät 21 ja kädessä on ässä, vähennetään 10 pistettä
-        {
-            total -= 10;
-            aceCount--;
-        }
-
-        return total;
-    }
-
-    private void UpdateUI()               // Päivittää näytölle pistetiedot ja pelaajan rahat
-    {
-        playerLabel.Text = "Player: " + playerScore;
-        dealerLabel.Text = "Dealer: " + dealerScore;
-        moneyLabel.Text = "Money: " + playerMoney;
-    }
-}
-
-public class Deck                         // Korttipakkaluokka
-{
-    private List<Card> cards;
-
-    public Deck()                         // Pakan konstruktori
-    {
-        cards = new List<Card>();
-        for (int i = 1; i <= 13; i++)     // Jokainen korttinumero lisätään neljä kertaa (yksi kutakin maata varten)
-        {
-            for (int j = 0; j < 4; j++)
             {
-                cards.Add(new Card(i));
+                UpdateUI();
             }
         }
-    }
 
-    public void Shuffle()                 // Korttien sekoitus
-    {
-        Random rng = new Random();
-        int n = cards.Count;
-        while (n > 1)
+        /// <summary>
+        /// Pelaajan "Stand"-toiminto, jossa pelaaja ei ota lisää kortteja.
+        /// Jakaja pelaa, kunnes sen pisteet ovat vähintään 17.
+        /// </summary>
+        private void PlayerStand()
         {
-            n--;
-            int k = rng.Next(n + 1);
-            Card value = cards[k];
-            cards[k] = cards[n];
-            cards[n] = value;
+            while (dealerScore < 17)
+            {
+                dealerHand.Add(deck.DrawCard());
+                UpdateScore();
+            }
+
+            if (dealerScore > 21 || playerScore > dealerScore)
+            {
+                messageLabel.Text = "You win!";
+                playerMoney += bet;
+            }
+            else if (dealerScore > playerScore)
+            {
+                messageLabel.Text = "Dealer wins!";
+                playerMoney -= bet;
+            }
+            else
+            {
+                messageLabel.Text = "It's a draw.";
+            }
+
+            UpdateUI();
+            Timer.SingleShot(2.0, NewRound);
+        }
+
+        /// <summary>
+        /// Päivittää pelaajan ja jakajan pistemäärät.
+        /// </summary>
+        private void UpdateScore()
+        {
+            playerScore = CalculateScore(playerHand);
+            dealerScore = CalculateScore(dealerHand);
+        }
+
+        /// <summary>
+        /// Laskee kädessä olevien korttien pisteet.
+        /// </summary>
+        /// <param name="hand">Lista korteista.</param>
+        /// <returns>Käden kokonaispistemäärä.</returns>
+        private int CalculateScore(List<Card> hand)
+        {
+            int total = 0;
+            int aceCount = 0;
+
+            foreach (Card card in hand)
+            {
+                if (card.Value >= 10)
+                    total += 10;
+                else if (card.Value == 1)
+                {
+                    aceCount++;
+                    total += 11;
+                }
+                else
+                    total += card.Value;
+            }
+
+            while (total > 21 && aceCount > 0)
+            {
+                total -= 10;
+                aceCount--;
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// Päivittää pelin tekstikentät näyttämään pistetiedot ja rahasumman.
+        /// </summary>
+        private void UpdateUI()
+        {
+            playerLabel.Text = "Player: " + playerScore;
+            dealerLabel.Text = "Dealer: " + dealerScore;
+            moneyLabel.Text = "Money: " + playerMoney;
         }
     }
 
-    public Card DrawCard()                // Kortin jakaminen pakasta
+    /// <summary>
+    /// Luokka, joka edustaa korttipakkaa.
+    /// </summary>
+    public class Deck
     {
-        if (cards.Count == 0) return null;
-        Card card = cards[0];  // Luodaan 'card'-muuttuja, johon tallennetaan pakan ensimmäinen kortti.
-        cards.RemoveAt(0);     // Poistetaan pakasta ensimmäinen kortti (index 0), koska se on juuri nostettu.
-        return card;   
+        private List<Card> cards;
+
+        /// <summary>
+        /// Luo uuden korttipakan.
+        /// </summary>
+        public Deck()
+        {
+            cards = new List<Card>();
+            for (int i = 1; i <= 13; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    cards.Add(new Card(i));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sekoittaa korttipakan.
+        /// </summary>
+        public void Shuffle()
+        {
+            Random rng = new Random();
+            int n = cards.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                Card value = cards[k];
+                cards[k] = cards[n];
+                cards[n] = value;
+            }
+        }
+
+        /// <summary>
+        /// Nostaa kortin pakasta.
+        /// </summary>
+        /// <returns>Ensimmäinen kortti pakasta.</returns>
+        public Card DrawCard()
+        {
+            if (cards.Count == 0) return null;
+            Card card = cards[0];
+            cards.RemoveAt(0);
+            return card;
+        }
     }
-}
-    public class Card   // Määrittelee kortti-olion, jolla on yksi ominaisuus: kortin arvo.
-{
-    public int Value { get; private set; }  // Kortin arvo, jota voidaan vain lukea ulkoapäin.
-    
-    public Card(int value)  // Konstruktori, joka asettaa kortin arvon sen luontihetkellä.
+
+    /// <summary>
+    /// Luokka, joka edustaa yksittäistä korttia.
+    /// </summary>
+    public class Card
     {
-        Value = value;  // Asettaa kortin arvoksi 'value'-parametrin arvon.
+        public int Value { get; private set; }
+
+        /// <summary>
+        /// Luo uuden kortin ja asettaa sen arvon.
+        /// </summary>
+        /// <param name="value">Kortin arvo.</param>
+        public Card(int value)
+        {
+            Value = value;
+        }
     }
 }
