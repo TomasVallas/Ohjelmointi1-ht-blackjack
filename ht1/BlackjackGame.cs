@@ -25,6 +25,8 @@ namespace BlackjackGame
         private Label dealerLabel;  // Jakajan pistetiedon näyttävä tekstikenttä
         private Label moneyLabel;  // Pelaajan rahasumman näyttävä tekstikenttä
         private Label messageLabel;  // Pelin viesteille tarkoitettu tekstikenttä
+        private Label playerCardsLabel;  // Pelaajan kortit tekstinä
+        private Label dealerCardsLabel;  // Jakajan kortit tekstinä
 
         /// <summary>
         /// Aloittaa pelin ja määrittää näppäinkomennot sekä käynnistää pelin alustusmetodin.
@@ -64,6 +66,15 @@ namespace BlackjackGame
             messageLabel = new Label("Place your bet and press Enter.");
             messageLabel.Position = new Vector(0, 0);
             Add(messageLabel);
+
+            // Korttien näyttämiseen tarkoitetut tekstikentät
+            playerCardsLabel = new Label("Player Cards:");
+            playerCardsLabel.Position = new Vector(-200, 250);
+            Add(playerCardsLabel);
+
+            dealerCardsLabel = new Label("Dealer Cards:");
+            dealerCardsLabel.Position = new Vector(-200, 300);
+            Add(dealerCardsLabel);
 
             Keyboard.Listen(Key.Enter, ButtonState.Pressed, NewRound, "Aloita uusi kierros");
             Keyboard.Listen(Key.Space, ButtonState.Pressed, PlayerHit, "Ota kortti");
@@ -187,13 +198,23 @@ namespace BlackjackGame
         }
 
         /// <summary>
-        /// Päivittää pelin tekstikentät näyttämään pistetiedot ja rahasumman.
+        /// Päivittää pelin tekstikentät näyttämään pistetiedot, rahasumman ja kortit.
         /// </summary>
         private void UpdateUI()
         {
             playerLabel.Text = "Player: " + playerScore;
             dealerLabel.Text = "Dealer: " + dealerScore;
             moneyLabel.Text = "Money: " + playerMoney;
+            UpdateCardUI();
+        }
+
+        /// <summary>
+        /// Päivittää pelaajan ja jakajan korttien tekstimuotoisen esityksen.
+        /// </summary>
+        private void UpdateCardUI()
+        {
+            playerCardsLabel.Text = "Player Cards: " + string.Join(", ", playerHand);
+            dealerCardsLabel.Text = "Dealer Cards: " + string.Join(", ", dealerHand);
         }
     }
 
@@ -214,7 +235,7 @@ namespace BlackjackGame
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    cards.Add(new Card(i));
+                    cards.Add(new Card(i, j));
                 }
             }
         }
@@ -255,14 +276,35 @@ namespace BlackjackGame
     public class Card
     {
         public int Value { get; private set; }
+        public string Suit { get; private set; }
+
+        private static readonly string[] suits = { "h", "d", "c", "s" };  // h = hertta, d = ruutu, c = risti, s = pata
 
         /// <summary>
-        /// Luo uuden kortin ja asettaa sen arvon.
+        /// Luo uuden kortin ja asettaa sen arvon ja maan.
         /// </summary>
         /// <param name="value">Kortin arvo.</param>
-        public Card(int value)
+        /// <param name="suitIndex">Maan indeksi.</param>
+        public Card(int value, int suitIndex)
         {
             Value = value;
+            Suit = suits[suitIndex];
+        }
+
+        /// <summary>
+        /// Palauttaa kortin tekstimuotoisen esityksen.
+        /// </summary>
+        public override string ToString()
+        {
+            string faceValue = Value switch
+            {
+                1 => "A",
+                11 => "J",
+                12 => "Q",
+                13 => "K",
+                _ => Value.ToString()
+            };
+            return $"{Suit}{faceValue}";
         }
     }
 }
