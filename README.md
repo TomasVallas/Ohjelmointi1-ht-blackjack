@@ -4,8 +4,6 @@ Blackjack-korttipeli, jossa pelaaja pelaa jakajaa vastaan.
 
 Tein pelin Jyväskylän yliopiston **Ohjelmointi 1** -kurssin harjoitustyönä syksyllä 2024. Se on toteutettu C#:lla ja JYU:n Jypeli-pelikirjastolla.
 
-![Blackjack-pelin ikkuna](kuvat/peli.png)
-
 ## Pelin kulku
 
 - Pelaaja ja jakaja saavat kumpikin kaksi korttia.
@@ -53,7 +51,6 @@ ht1/
 ├── BlackjackGame.cs        Peli: säännöt, pisteiden lasku ja näkymä
 └── BlackjackGame.csproj    Projektitiedosto ja riippuvuudet
 suunnitelma/                Harjoitustyön suunnitelman kuvat
-kuvat/                      Kuvakaappaukset
 ```
 
 `BlackjackGame.cs` sisältää kolme luokkaa:
